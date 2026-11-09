@@ -13,6 +13,7 @@ function order(d){const p=P(d);if(!p.order||p.order.length!=d.cards.length)p.ord
 function stats(d){const p=P(d),m=p.marks,n=Date.now();let k=0,w=0,u=0;d.cards.forEach(c=>{if(m[c.q]===1)k++;else if(m[c.q]===0)w++;const s=p.sr[c.q];if(!s||s.due<=n)u++});return[k,w,u]}
 function sz(t){return t.length<50?'s1':t.length<140?'s2':t.length<320?'s3':'s4'}
 function render(){const h=$('head'),m=$('main'),f=$('foot');$('menu').hidden=!S.menu;
+ if(S.scr!='decks'&&S.scr!='card')return QZ.render(h,m,f);
  if(S.scr=='decks'){h.innerHTML='<span>Decks</span><span class=sub>'+decks.length+'</span>';
   if(!decks.length){m.innerHTML='<div class=msg>No decks. Import on phone: /import.html</div>';f.textContent='';return}
   m.innerHTML=decks.map((d,n)=>{const[k,w,u]=stats(d);return'<div class="row'+(n==S.sel?' sel':'')+'"><span>'+esc(d.name)+'</span><span class=sub>'+d.cards.length+' cards · '+u+' due · '+k+'✓ '+w+'✗</span></div>'}).join('');
@@ -27,7 +28,7 @@ function render(){const h=$('head'),m=$('main'),f=$('foot');$('menu').hidden=!S.
  if(S.menu)drawMenu()}
 function ov(){const b=$('body');return b&&b.scrollHeight>b.clientHeight+2}
 const NX={due:'missed',missed:'all',all:'due'};
-function items(){const p=P(S.deck);return[['✓ Know it',()=>mark(1)],['✗ Missed it',()=>mark(0)],['Shuffle',shuffle],['Show: '+p.filter+' → '+NX[p.filter],()=>{p.filter=NX[p.filter];S.i=0;S.flip=false}],['Reset progress',()=>{p.marks={};p.sr={};p.filter='due';S.i=0}],['Deck list',()=>{S.scr='decks';S.deck=null}]]}
+function items(){if(S.scr!='card')return QZ.items();const p=P(S.deck);return[['✓ Know it',()=>mark(1)],['✗ Missed it',()=>mark(0)],['Shuffle',shuffle],['Show: '+p.filter+' → '+NX[p.filter],()=>{p.filter=NX[p.filter];S.i=0;S.flip=false}],['Reset progress',()=>{p.marks={};p.sr={};p.qz={};p.st=null;p.filter='due';S.i=0}],['Study modes',()=>{S.scr='modes'}],['Deck list',()=>{S.scr='decks';S.deck=null}]]}
 function drawMenu(){$('menu').innerHTML='<div id=head>Menu</div>'+items().map((x,n)=>'<div class="row'+(n==S.msel?' sel':'')+'">'+x[0]+'</div>').join('')+'<div id=foot>↑↓ choose  Enter select  Esc close</div>'}
 function mark(v){const d=S.deck,o=order(d),c=d.cards[o[S.i]];if(!c)return;const p=P(d),s=p.sr[c.q]||{b:0},b=v?Math.min(5,s.b+1):1;p.marks[c.q]=v;p.sr[c.q]={b,due:Date.now()+(v?IV[b]*DAY:0)};savep();S.flip=false;if(order(d).includes(o[S.i]))S.i++}
 function shuffle(){const d=S.deck,p=P(d);const a=d.cards.map((_,i)=>i);for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}p.order=a;S.i=0;S.flip=false}
@@ -37,10 +38,11 @@ function scroll(dir){const b=$('body');if(!b||!ov())return false;const max=b.scr
 document.addEventListener('keydown',e=>{const k=e.key;if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Escape'].includes(k))return;if(e.repeat&&k=='Enter')return;
  if(S.scr=='decks'){if(k=='Escape')return;e.preventDefault();
   if(k=='ArrowDown')S.sel=Math.min(decks.length-1,S.sel+1);else if(k=='ArrowUp')S.sel=Math.max(0,S.sel-1);
-  else if(k=='Enter'&&decks[S.sel]){S.deck=decks[S.sel];S.scr='card';S.i=P(S.deck).pos||0;S.flip=false}render();return}
+  else if(k=='Enter'&&decks[S.sel]){S.deck=decks[S.sel];S.scr='modes'}render();return}
  e.preventDefault();
  if(S.menu){if(k=='ArrowDown')S.msel=Math.min(items().length-1,S.msel+1);else if(k=='ArrowUp')S.msel=Math.max(0,S.msel-1);
   else if(k=='Enter'){const f=items()[S.msel][1];S.menu=false;f();savep()}else if(k=='Escape')S.menu=false;render();return}
+ if(S.scr!='card'){if(QZ.key(k)!==0)render();return}
  if(k=='Escape'){S.menu=true;S.msel=0}else if(k=='Enter')S.flip=!S.flip;
  else if(k=='ArrowRight')go(1);else if(k=='ArrowLeft')go(-1);
  else if(k=='ArrowDown'){if(scroll(1))return;mark(0)}else if(k=='ArrowUp'){if(scroll(-1))return;mark(1)}
