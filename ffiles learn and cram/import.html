@@ -1,0 +1,14 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Import</title>
+<style>body{font:16px system-ui;max-width:640px;margin:auto;padding:16px}input,textarea,button{font:inherit;width:100%;margin:6px 0;padding:8px}textarea{height:140px}li{margin:8px 0}</style></head><body>
+<h2>Import Quizlet sets</h2><p>Quizlet: set → ⋯ → Export → copy text (tab between term and definition, new line between cards), or upload .txt/.tsv/.csv.</p>
+<input id=name placeholder="Deck name (e.g. Phlebotomy)"><input id=file type=file multiple accept=".txt,.tsv,.csv"><textarea id=txt placeholder="…or paste exported text here"></textarea>
+<button id=go>Import deck</button><div id=msg></div><h3>Decks stored in this browser</h3><ul id=list></ul>
+<p>Storage is per browser: decks imported here do not reach the glasses. Download each deck as .tsv, put it in <code>decks/</code>, list it in <code>decks/manifest.json</code>, redeploy.</p><script src="core.js"></script><script>
+const $=i=>document.getElementById(i);let D=Core.get('fc.decks',[]);
+function draw(){$('list').innerHTML=D.map((d,n)=>'<li>'+d.name+' ('+d.cards.length+') <button data-d='+n+'>Download .tsv</button><button data-x='+n+'>Delete</button></li>').join('')}
+function add(name,text){const cards=Core.parse(text);if(!cards.length)return $('msg').textContent='No cards found in '+name;
+ const id=Core.slug(name),i=D.findIndex(d=>d.id==id);const dk={id,name,src:'local',cards};if(i<0)D.push(dk);else D[i]=dk;Core.set('fc.decks',D);$('msg').textContent='Imported '+cards.length+' cards into '+name;draw()}
+$('go').onclick=async()=>{const fs=[...$('file').files];if(fs.length)for(const f of fs)add(fs.length>1||!$('name').value?f.name.replace(/\.\w+$/,''):$('name').value,await f.text());
+ else if($('txt').value)add($('name').value||'Deck',$('txt').value)};
+$('list').onclick=e=>{const t=e.target.dataset;if(t.x){D.splice(t.x,1);Core.set('fc.decks',D)}else if(t.d){const d=D[t.d],b=new Blob([d.cards.map(c=>c.q.replace(/[\t\n]/g,' ')+'\t'+c.a.replace(/[\t\n]/g,' ')).join('\n')]),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=d.id+'.tsv';a.click()}draw()};draw();
+</script></body></html>
